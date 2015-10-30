@@ -7,6 +7,8 @@ import com.saucelabs.saucerest.SauceREST;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 import org.testng.TestListenerAdapter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,9 +84,15 @@ public class SauceOnDemandTestListener extends TestListenerAdapter {
     @Override
     public void onTestStart(ITestResult result) {
         super.onTestStart(result);
+        String testName = result.getName();
+        // can send testName to sauce
 
         if (isLocal) {
             return;
+        }
+        String job_name = System.getenv("env.JOB_NAME");
+        if (job_name != null) {
+          // Can send jenkin project name to sauce
         }
 
         if (verboseMode && result.getInstance() instanceof SauceOnDemandSessionIdProvider) {
@@ -118,6 +126,21 @@ public class SauceOnDemandTestListener extends TestListenerAdapter {
 
         markJobAsFailed();
         printPublicJobLink();
+        String stackTrace = null;
+        if((ITestResult.FAILURE == tr.getStatus()) ||
+           (ITestResult.SUCCESS_PERCENTAGE_FAILURE == tr.getStatus())) {
+          StringWriter sw = new StringWriter();
+          PrintWriter  pw = new PrintWriter(sw);
+          Throwable cause= tr.getThrowable();
+          if (cause != null) {
+            cause.printStackTrace(pw);
+            stackTrace = sw.getBuffer().toString();
+          }
+          else {
+            stackTrace= "unknown stack trace";
+          }
+        }
+        // send stackTrace to sauce rest api
     }
 
     private void markJobAsFailed() {
